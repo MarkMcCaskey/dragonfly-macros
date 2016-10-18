@@ -10,6 +10,10 @@ import pythoncom
 
 from dragonfly import Grammar, CompoundRule, MappingRule, AppContext, Dictation, Function, Integer, Key, Text, RuleRef, Repetition
 
+import asyncio
+import websockets
+import json
+
 # SeriesMappingRule adapted from here:
 # https://github.com/barrysims/dragonfly/blob/master/utils/series_mapping_rule.py
 # This class allows us to do CCR (continuous command recognition).
@@ -70,9 +74,9 @@ text_edit_mapping_rule = MappingRule(
 
         "dictate <text>" : Text("%(text)s"),
 
-        "alpha"          : Key("a"),
-        "bravo"          : Key("b"),
-        "charlie"        : Key("c"),
+        "alpha"          : sendKey("a"),
+        "bravo"          : sendKey("b"),
+        "charlie"        : sendKey("c"),
         "delta"          : Key("d"),
         "echo"           : Key("e"),
         "foxtrot"        : Key("f"),
@@ -243,6 +247,12 @@ def unload():
     text_edit_grammar = None
 
 
+websocket = websockets.connect('ws://localhost:5235')
+
+def sendKey(key):
+    message = json.dumps({'type' : 'command', 'commandType' : 'press', 'data' : {'keyVal' : key, 'pressType' : 'press'}})
+    websocket.send(message)
+    
 # pump messages from windows
 while True:
     pythoncom.PumpWaitingMessages()
